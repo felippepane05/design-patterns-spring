@@ -1,6 +1,6 @@
 # Design Patterns com Spring
 
-Projeto de estudo baseado no laboratorio **Explorando Padroes de Projetos na Pratica com Java**, da DIO. Reproduz a API de clientes e enderecos apresentada em aula e acrescenta tratamento para a consulta de um cliente inexistente.
+Projeto de estudo baseado no laboratorio **Explorando Padroes de Projetos na Pratica com Java**, da DIO. Reproduz a API de clientes e enderecos apresentada em aula e acrescenta tratamento para clientes inexistentes e correcao da atualizacao pelo ID da URL.
 
 ## Creditos
 
@@ -16,12 +16,15 @@ A estrutura, as funcionalidades e os exemplos de padroes sao da base da aula. Os
 
 ## Melhoria realizada
 
-Na busca por ID, um cliente inexistente passa a retornar **HTTP 404** com a mensagem **Cliente não encontrado**, em vez de acessar um Optional vazio com get().
+Na busca por ID, atualizacao e exclusao, um cliente inexistente retorna **HTTP 404** com a mensagem **Cliente não encontrado**.
+
+A atualizacao agora usa o ID da URL, mesmo quando o corpo nao informa um ID ou informa outro. Isso corrige uma falha da base que criava outro cadastro em vez de atualizar o cliente existente.
 
 Arquivos alterados em relacao ao projeto original:
 
-- `ClienteServiceImpl.java`: usa `orElseThrow()` com `ResponseStatusException`.
+- `ClienteServiceImpl.java`: usa `orElseThrow()` com `ResponseStatusException`, verifica existencia antes de atualizar/excluir e fixa o ID da URL na atualizacao.
 - `src/main/resources/application.properties`: inclui a mensagem de erro na resposta HTTP.
+- `ClienteServiceImplTest.java`: testes de regressao para o 404 e a atualizacao sem duplicacao.
 
 ## Padroes explorados na aula
 
@@ -52,7 +55,7 @@ No Windows, tambem e possivel usar o wrapper incluido:
 
 A primeira execucao baixa dependencias e precisa de internet. O cadastro consulta o ViaCEP quando o endereco ainda nao esta armazenado. O banco H2 e temporario: os dados sao perdidos ao encerrar a aplicacao.
 
-Swagger: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html).
+Swagger: [http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config](http://localhost:8080/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config).
 
 ## Endpoints
 
@@ -79,4 +82,6 @@ Para conferir a melhoria, consulte `GET /clientes/999999` sem cadastrar esse ID:
 
 ## Verificacao
 
-Build Maven e teste de contexto executados com sucesso em JDK 21.0.12.1. Na verificacao HTTP local, a listagem respondeu 200 e a consulta de cliente inexistente respondeu 404 com a mensagem esperada. O cadastro com ViaCEP real nao foi testado nesta versao.
+Em 24/11/2026, o fluxo HTTP foi testado em uma instancia temporaria com H2 vazio e ViaCEP real: cadastro com CEP 01001-000 (Praca da Se, Sao Paulo), consulta, listagem, atualizacao para CEP 20040-020 (Rio de Janeiro), atualizacao sem ID no corpo e com ID divergente, reutilizacao de endereco e exclusao. A atualizacao manteve o ID e nao duplicou clientes. Busca, atualizacao e exclusao de IDs inexistentes retornaram 404. OpenAPI e Swagger responderam corretamente. Os dados eram ficticios e a instancia foi encerrada depois dos testes.
+
+Build e testes automatizados executados com JDK 21.0.12.1. Os testes locais nao garantem disponibilidade permanente do ViaCEP nem cobrem todas as entradas invalidas possiveis; as demais regras do exemplo original foram preservadas.
